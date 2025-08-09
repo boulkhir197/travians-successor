@@ -48,7 +48,7 @@ export default class FishingScene extends Phaser.Scene {
         try {
           // @ts-ignore
           const token = await (window as any).authReady;
-          const r = await fetch('http://localhost:8787/jobs/fishing/claim', {
+          const r = await fetch('http://localhost:8787/jobs/fishing/catch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
             body: JSON.stringify({ success: true })

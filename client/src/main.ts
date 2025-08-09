@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import MarketScene from './market';
 import { io } from 'socket.io-client';
 import FishingScene from './fishing';
 
@@ -75,7 +76,7 @@ class HubScene extends Phaser.Scene {
 }
 
 const game = new Phaser.Game({
-  type: Phaser.AUTO, parent: 'game', width: 960, height: 540, scene: [HubScene, FishingScene]
+  type: Phaser.AUTO, parent: 'game', width: 960, height: 540, scene: [HubScene, FishingScene, MarketScene]
 }) as Phaser.Game & { _current?: string };
 
 // Buttons
@@ -96,3 +97,23 @@ document.getElementById('btn-hub')!.addEventListener('click', () => {
 
 // @ts-ignore
 window.game = game;
+
+// Market button (creates one if missing)
+(() => {
+  let btn = document.getElementById('btn-market');
+  if (!btn) {
+    const host = document.getElementById('controls') || document.body;
+    btn = document.createElement('button');
+    btn.id = 'btn-market';
+    btn.textContent = 'Aller au marché';
+    btn.style.margin = '4px';
+    host.prepend(btn);
+  }
+  btn!.addEventListener('click', () => {
+    // @ts-ignore
+    const mgr = (window as any).game.scene;
+    mgr.stop('Hub'); mgr.stop('Fishing');
+    if (mgr.isActive('Market')) mgr.bringToTop('Market');
+    else mgr.start('Market');
+  });
+})();
