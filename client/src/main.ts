@@ -90,6 +90,7 @@ document.getElementById('btn-fish')!.addEventListener('click', () => {
 document.getElementById('btn-hub')!.addEventListener('click', () => {
   const mgr = game.scene;
   mgr.stop('Fishing');
+  mgr.stop('Market');
   if (mgr.isActive('Hub')) mgr.bringToTop('Hub');
   else mgr.start('Hub');
 });
