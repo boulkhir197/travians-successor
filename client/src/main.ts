@@ -187,3 +187,37 @@ window.game = game;
     setTimeout(() => clearInterval(iv), 6000);
   }
 })();
+
+/* MVP_LIMITS_HUD */
+async function fetchLimits() {
+  try {
+    // @ts-ignore
+    const token = await (window as any).authReady;
+    const r = await fetch('http://localhost:8787/limits', { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json();
+    const log = document.getElementById('chat-log')!;
+    const div = document.createElement('div');
+    div.textContent = `[limits] Cap restant aujourd'hui: ${j.remainingToday ?? 'N/A'}`;
+    log.appendChild(div);
+  } catch {}
+}
+// @ts-ignore
+(window as any).refreshLimits = fetchLimits;
+fetchLimits();
+
+// Logout button (QoL)
+(() => {
+  let btn = document.getElementById('btn-logout');
+  if (!btn) {
+    const host = document.getElementById('controls') || document.body;
+    btn = document.createElement('button');
+    btn.id = 'btn-logout';
+    btn.textContent = 'Déconnexion';
+    (btn as HTMLButtonElement).style.margin = '4px';
+    host.appendChild(btn);
+  }
+  btn!.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    location.reload();
+  });
+})();

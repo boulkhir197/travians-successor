@@ -10,6 +10,12 @@ export default class FishingScene extends Phaser.Scene {
 
   constructor() { super('Fishing'); }
 
+  /* MVP_SOUNDS */
+  preload() {
+    if (!this.sound.get('catch')) this.load.audio('catch','/sfx/catch.wav');
+    if (!this.sound.get('miss')) this.load.audio('miss','/sfx/miss.wav');
+  }
+
   create() {
     // Fond gris pour vérifier que la scène est bien devant
     this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x202830).setOrigin(0);
@@ -43,7 +49,7 @@ export default class FishingScene extends Phaser.Scene {
 
       if (success) {
         this.statusFail?.setAlpha(0);
-        this.statusOk = put(this.statusOk, 100, 400, 'Poisson attrapé ! (+10 Acorns)', '#00ff88');
+        this.statusOk = put(this.statusOk, 100, 400, 'Poisson attrapé ! (+10 Acorns)', '#00ff88'); this.sound.play('catch',{volume:0.6});
 
         try {
           // @ts-ignore
@@ -68,7 +74,11 @@ export default class FishingScene extends Phaser.Scene {
           }
 
           const json = await r.json();
-          this.acornsText = put(this.acornsText, 100, 460, `Acorns: ${json.acorns}`, '#aaddff');
+          this.acornsText = put(this.acornsText, 100, 460, `Acorns: `, '#aaddff');
+          if (json.capped || (json.remainingToday!==undefined && json.remainingToday<=0)) {
+            this.add.text(100, 485, 'Cap atteint pour aujourd'hui', { font: '14px sans-serif', color: '#ffaa00' });
+          }
+          try { const rf = (window as any).refreshLimits; if (typeof rf==='function') rf(); } catch {}
 
           // rafraîchir le HUD du chat
           try {
@@ -81,7 +91,7 @@ export default class FishingScene extends Phaser.Scene {
         }
       } else {
         this.statusOk?.setAlpha(0);
-        this.statusFail = put(this.statusFail, 100, 430, 'Raté…', '#ff6666');
+        this.statusFail = put(this.statusFail, 100, 430, 'Raté…', '#ff6666'); this.sound.play('miss',{volume:0.5});
       }
     });
 
