@@ -58,3 +58,25 @@ app.post('/admin/rollover', async (_req, res) => {
 
 const server = http.createServer(app); setupWS(server);
 server.listen(process.env.PORT || 8787, () => console.log('Server on', process.env.PORT || 8787));
+
+// --- Wallet ---
+app.get('/wallet', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const r = await query('select acorns from user_wallets where user_id=$1', [token]);
+  res.json({ acorns: r.rows[0]?.acorns ?? 0 });
+});
+
+// --- Fishing reward (MVP - no anti-abuse yet) ---
+app.post('/jobs/fishing/claim', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const { success } = req.body || {};
+  const delta = success ? 10 : 0;
+  await query('insert into user_wallets(user_id, acorns) values ($1, 0) on conflict (user_id) do nothing', [token]);
+  if (delta > 0) {
+    await query('update user_wallets set acorns = acorns + $1 where user_id=$2', [delta, token]);
+  }
+  const r = await query('select acorns from user_wallets where user_id=$1', [token]);
+  res.json({ ok: true, gained: delta, acorns: r.rows[0]?.acorns ?? 0 });
+});

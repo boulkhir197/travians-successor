@@ -4,6 +4,35 @@ import FishingScene from './fishing';
 
 const socket = io('http://localhost:8787');
 
+// --- Auth & wallet HUD ---
+async function ensureToken(): Promise<string> {
+  let token = localStorage.getItem("token") || "";
+  if (!token) {
+    const r = await fetch("http://localhost:8787/auth/guest", { method: "POST" });
+    const json = await r.json();
+    token = json.token;
+    localStorage.setItem("token", token);
+  }
+  return token;
+}
+const authReady = ensureToken();
+
+async function refreshWallet() {
+  const token = await authReady;
+  try {
+    const r = await fetch("http://localhost:8787/wallet", { headers: { Authorization: "Bearer " + token } });
+    const json = await r.json();
+    const log = document.getElementById("chat-log")!;
+    const div = document.createElement("div");
+    div.textContent = `[wallet] Acorns: ${json.acorns ?? 0}`;
+    log.appendChild(div);
+  } catch {}
+}
+// @ts-ignore
+window.authReady = authReady;
+refreshWallet();
+
+
 socket.on('chat:message', (m: any) => {
   const log = document.getElementById('chat-log')!;
   const div = document.createElement('div');
