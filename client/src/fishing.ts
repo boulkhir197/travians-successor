@@ -4,6 +4,9 @@ export default class FishingScene extends Phaser.Scene {
   private cursor!: Phaser.GameObjects.Rectangle;
   private dir: number = 1;
   private speed: number = 2;
+  private statusOk?: Phaser.GameObjects.Text;
+  private statusFail?: Phaser.GameObjects.Text;
+  private acornsText?: Phaser.GameObjects.Text;
 
   constructor() { super('Fishing'); }
 
@@ -26,8 +29,22 @@ export default class FishingScene extends Phaser.Scene {
     const debug = this.add.text(10, 36, '', { font: '12px monospace' });
 
     this.input.keyboard?.on('keydown-SPACE', async () => {
-      if (this.cursor.y > 170 && this.cursor.y < 230) {
-        this.add.text(100, 400, 'Poisson attrapé ! (+10 Acorns)', { font: '20px sans-serif', color: '#00ff88' });
+      const success = this.cursor.y > 170 && this.cursor.y < 230;
+
+      const put = (ref: Phaser.GameObjects.Text | undefined, x: number, y: number, txt: string, color: string) => {
+        if (!ref) {
+          ref = this.add.text(x, y, txt, { font: '20px sans-serif', color });
+          ref.setDepth(1000);
+        } else {
+          ref.setText(txt).setColor(color).setAlpha(1);
+        }
+        return ref;
+      };
+
+      if (success) {
+        this.statusFail?.setAlpha(0);
+        this.statusOk = put(this.statusOk, 100, 400, 'Poisson attrapé ! (+10 Acorns)', '#00ff88');
+
         try {
           // @ts-ignore
           const token = await (window as any).authReady;
@@ -36,25 +53,35 @@ export default class FishingScene extends Phaser.Scene {
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
             body: JSON.stringify({ success: true })
           });
+
           if (!r.ok) {
+            let msg = 'Récompense refusée';
             try {
               const err = await r.json();
-              if (err && err.error === 'cooldown') {
+              if (err?.error === 'cooldown') {
                 const secs = Math.ceil((err.retryInMs || 0) / 1000);
-                this.add.text(100, 480, `Cooldown… réessayez dans ${secs}s`, { font: '14px sans-serif' });
-                return;
+                msg = `Cooldown… réessayez dans ${secs}s`;
               }
             } catch {}
-            this.add.text(100, 480, 'Récompense refusée', { font: '14px sans-serif' });
+            this.acornsText = put(this.acornsText, 100, 460, msg, '#ffaa00');
             return;
           }
+
           const json = await r.json();
-          this.add.text(100, 460, `Acorns: ${json.acorns}`, { font: '14px sans-serif', color: '#aaddff' });
+          this.acornsText = put(this.acornsText, 100, 460, `Acorns: ${json.acorns}`, '#aaddff');
+
+          // rafraîchir le HUD du chat
+          try {
+            // @ts-ignore
+            const refresh = (window as any).refreshWallet;
+            if (typeof refresh === 'function') refresh();
+          } catch {}
         } catch {
-          this.add.text(100, 460, 'Erreur récompense', { font: '14px sans-serif', color: '#ff6666' });
+          this.acornsText = put(this.acornsText, 100, 460, 'Erreur récompense', '#ff6666');
         }
       } else {
-        this.add.text(100, 430, 'Raté…', { font: '20px sans-serif', color: '#ff6666' });
+        this.statusOk?.setAlpha(0);
+        this.statusFail = put(this.statusFail, 100, 430, 'Raté…', '#ff6666');
       }
     });
 
