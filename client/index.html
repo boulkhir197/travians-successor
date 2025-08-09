@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hearth of the Hamlet</title>
+    <style>
+      .ui-btn { padding:6px 10px; border:1px solid #888; border-radius:6px; background:#fff; cursor:pointer; margin-right:8px; }
+      .ui-bar { position:fixed; top:8px; left:8px; z-index:9999; }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div class="ui-bar">
+      <button id="btn-fish" class="ui-btn">🎣 Aller pêcher</button>
+      <button id="btn-hub" class="ui-btn">🏠 Revenir à la Plaza</button>
+    </div>
+    <div id="chat" style="position:fixed;left:12px;bottom:12px;width:360px;height:220px;background:#fff9;border:1px solid #ccc;padding:8px;overflow:auto;font-family:sans-serif;">
+      <div id="chat-log" style="height:170px; overflow:auto;"></div>
+      <input id="chat-input" placeholder="Say something..." style="width:100%;"/>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

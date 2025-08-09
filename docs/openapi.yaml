@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info: { title: Hearth of the Hamlet API, version: 0.1.0 }
+servers: [ { url: http://localhost:8787 } ]
+paths:
+  /health: { get: { responses: { '200': { description: ok } } } }
+  /auth/guest: { post: { responses: { '200': { description: ok } } } }
+  /me: { get: { responses: { '200': { description: ok } } } }
+  /chat/history:
+    get:
+      parameters:
+        - in: query; name: channel; schema: { type: string }
+        - in: query; name: limit; schema: { type: integer }
+      responses: { '200': { description: ok } }
+  /house: { post: { responses: { '200': { description: ok } } } }
+  /quests: { get: { responses: { '200': { description: ok } } } }
+  /quests/claim: { post: { responses: { '200': { description: ok } } } }
+  /admin/rollover: { post: { responses: { '200': { description: ok } } } }
