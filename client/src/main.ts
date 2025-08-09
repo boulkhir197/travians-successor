@@ -117,3 +117,53 @@ window.game = game;
     else mgr.start('Market');
   });
 })();
+
+/* MARKET_WIRING */
+(function wireMarketUI(){
+  // Run after window.game exists
+  const run = () => {
+    // @ts-ignore
+    const g = (window as any).game;
+    if (!g || !g.scene) return false;
+
+    // Ensure button exists
+    let btn = document.getElementById('btn-market');
+    if (!btn) {
+      const host = document.getElementById('controls') || document.body;
+      btn = document.createElement('button');
+      btn.id = 'btn-market';
+      btn.textContent = 'Aller au marché';
+      (btn as HTMLButtonElement).style.margin = '4px';
+      host.prepend(btn);
+    }
+    btn!.addEventListener('click', () => {
+      const mgr = g.scene;
+      mgr.stop('Hub'); mgr.stop('Fishing');
+      if (mgr.isActive('Market')) mgr.bringToTop('Market');
+      else mgr.start('Market');
+    }, { once: false });
+
+    // Keyboard shortcut: M -> Market, H -> Hub
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'm') {
+        const mgr = g.scene;
+        mgr.stop('Hub'); mgr.stop('Fishing');
+        if (mgr.isActive('Market')) mgr.bringToTop('Market');
+        else mgr.start('Market');
+      }
+      if (e.key.toLowerCase() === 'h') {
+        const mgr = g.scene;
+        mgr.stop('Fishing'); mgr.stop('Market');
+        if (mgr.isActive('Hub')) mgr.bringToTop('Hub');
+        else mgr.start('Hub');
+      }
+    });
+    return true;
+  };
+
+  if (!run()) {
+    // try again once Phaser has booted
+    const iv = setInterval(() => { if (run()) clearInterval(iv); }, 200);
+    setTimeout(() => clearInterval(iv), 8000);
+  }
+})();
