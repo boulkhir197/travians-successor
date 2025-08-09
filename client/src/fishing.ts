@@ -25,9 +25,34 @@ export default class FishingScene extends Phaser.Scene {
     // Debug: texte pour afficher la position du curseur
     const debug = this.add.text(10, 36, '', { font: '12px monospace' });
 
-    this.input.keyboard?.on('keydown-SPACE', () => {
+    this.input.keyboard?.on('keydown-SPACE', async () => {
       if (this.cursor.y > 170 && this.cursor.y < 230) {
         this.add.text(100, 400, 'Poisson attrapé ! (+10 Acorns)', { font: '20px sans-serif', color: '#00ff88' });
+        try {
+          // @ts-ignore
+          const token = await (window as any).authReady;
+          const r = await fetch('http://localhost:8787/jobs/fishing/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ success: true })
+          });
+          if (!r.ok) {
+            try {
+              const err = await r.json();
+              if (err && err.error === 'cooldown') {
+                const secs = Math.ceil((err.retryInMs || 0) / 1000);
+                this.add.text(100, 480, `Cooldown… réessayez dans ${secs}s`, { font: '14px sans-serif' });
+                return;
+              }
+            } catch {}
+            this.add.text(100, 480, 'Récompense refusée', { font: '14px sans-serif' });
+            return;
+          }
+          const json = await r.json();
+          this.add.text(100, 460, `Acorns: ${json.acorns}`, { font: '14px sans-serif', color: '#aaddff' });
+        } catch {
+          this.add.text(100, 460, 'Erreur récompense', { font: '14px sans-serif', color: '#ff6666' });
+        }
       } else {
         this.add.text(100, 430, 'Raté…', { font: '20px sans-serif', color: '#ff6666' });
       }
