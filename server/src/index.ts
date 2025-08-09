@@ -80,3 +80,71 @@ app.post('/jobs/fishing/claim', async (req, res) => {
   const r = await query('select acorns from user_wallets where user_id=$1', [token]);
   res.json({ ok: true, gained: delta, acorns: r.rows[0]?.acorns ?? 0 });
 });
+
+// === Inventory & Market ===
+app.get('/inventory', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const r = await query('select item, qty from user_inventory where user_id=$1 order by item asc', [token]);
+  res.json(r.rows);
+});
+
+app.post('/inventory/add', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const { item, qty } = req.body || {};
+  if (!item || !Number.isInteger(qty)) return res.status(400).json({ error: 'bad params' });
+  await query(`insert into user_inventory(user_id, item, qty) values ($1,$2,$3)
+               on conflict (user_id, item) do update set qty = user_inventory.qty + EXCLUDED.qty`,
+               [token, item, qty]);
+  const r = await query('select item, qty from user_inventory where user_id=$1 and item=$2', [token, item]);
+  res.json({ ok: true, item: r.rows[0] || { item, qty: 0 } });
+});
+
+// Price list (very static for now)
+const PRICE_SELL: Record<string, number> = { fish: 10 };
+
+app.post('/market/sell', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const { item, qty } = req.body || {};
+  if (!item || !Number.isInteger(qty) || qty <= 0) return res.status(400).json({ error: 'bad params' });
+
+  // check inv
+  const inv = await query('select qty from user_inventory where user_id=$1 and item=$2', [token, item]);
+  const have = inv.rows[0]?.qty ?? 0;
+  if (have < qty) return res.status(400).json({ error: 'not_enough', have });
+
+  // remove from inv
+  await query('update user_inventory set qty = qty - $1 where user_id=$2 and item=$3', [qty, token, item]);
+
+  // credit wallet
+  const price = PRICE_SELL[item] ?? 0;
+  const delta = price * qty;
+  await query('insert into user_wallets(user_id, acorns) values ($1, 0) on conflict (user_id) do nothing', [token]);
+  if (delta > 0) await query('update user_wallets set acorns = acorns + $1 where user_id=$2', [delta, token]);
+
+  const w = await query('select acorns from user_wallets where user_id=$1', [token]);
+  const r2 = await query('select item, qty from user_inventory where user_id=$1 and item=$2', [token, item]);
+  res.json({ ok: true, gained: delta, acorns: w.rows[0]?.acorns ?? 0, item: r2.rows[0] || { item, qty: 0 } });
+});
+
+// New catch endpoint that gives fish + acorns in one go
+app.post('/jobs/fishing/catch', async (req, res) => {
+  const token = String(req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'no token' });
+  const { success } = req.body || {};
+  if (!success) return res.json({ ok: true, gained: 0, acorns: 0, item: { item: 'fish', qty: 0 } });
+
+  // +1 fish
+  await query(`insert into user_inventory(user_id, item, qty) values ($1,'fish',1)
+               on conflict (user_id, item) do update set qty = user_inventory.qty + 1`, [token]);
+
+  // +10 acorns
+  await query('insert into user_wallets(user_id, acorns) values ($1, 0) on conflict (user_id) do nothing', [token]);
+  await query('update user_wallets set acorns = acorns + 10 where user_id=$1', [token]);
+
+  const w = await query('select acorns from user_wallets where user_id=$1', [token]);
+  const inv = await query('select qty from user_inventory where user_id=$1 and item=$2', [token, 'fish']);
+  res.json({ ok: true, gained: 10, acorns: w.rows[0]?.acorns ?? 0, item: { item: 'fish', qty: inv.rows[0]?.qty ?? 0 } });
+});
