@@ -30,6 +30,7 @@ async function refreshWallet() {
 }
 // @ts-ignore
 window.authReady = authReady;
+(window as any).refreshWallet = refreshWallet;
 refreshWallet();
 
 
