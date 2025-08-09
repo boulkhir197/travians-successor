@@ -76,7 +76,7 @@ export default class FishingScene extends Phaser.Scene {
           const json = await r.json();
           this.acornsText = put(this.acornsText, 100, 460, `Acorns: `, '#aaddff');
           if (json.capped || (json.remainingToday!==undefined && json.remainingToday<=0)) {
-            this.add.text(100, 485, 'Cap atteint pour aujourd'hui', { font: '14px sans-serif', color: '#ffaa00' });
+            this.add.text(100, 485, "Cap atteint pour aujourd'hui", { font: '14px sans-serif', color: '#ffaa00' });
           }
           try { const rf = (window as any).refreshLimits; if (typeof rf==='function') rf(); } catch {}
 
