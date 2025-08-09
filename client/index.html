@@ -9,6 +9,11 @@
       .ui-bar { position:fixed; top:8px; left:8px; z-index:9999; }
     </style>
   </head>
+<style>/* CONTROLS_STYLE */
+  #controls { position:fixed; top:8px; left:12px; z-index:10000; display:flex; gap:8px; align-items:center; }
+  #controls button { padding:6px 10px; font:14px sans-serif; border:1px solid #888; border-radius:8px; background:#fff; cursor:pointer; }
+  #controls button:hover { filter:brightness(0.95); }
+</style>
   <body>
 <div id="controls" style="position:fixed;top:6px;left:8px;z-index:10000;pointer-events:auto"></div>
     <div id="game"></div>

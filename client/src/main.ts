@@ -167,3 +167,22 @@ window.game = game;
     setTimeout(() => clearInterval(iv), 8000);
   }
 })();
+
+/* MOVE_CONTROLS */
+(function arrangeTopControls(){
+  const run = () => {
+    const host = document.getElementById('controls');
+    if (!host) return false;
+    const ids = ['btn-fish', 'btn-market', 'btn-hub'];
+    for (const id of ids) {
+      let el = document.getElementById(id);
+      if (el && el.parentElement !== host) host.appendChild(el);
+      if (el instanceof HTMLButtonElement) el.style.margin = '0';
+    }
+    return true;
+  };
+  if (!run()) {
+    const iv = setInterval(() => { if (run()) clearInterval(iv); }, 200);
+    setTimeout(() => clearInterval(iv), 6000);
+  }
+})();
